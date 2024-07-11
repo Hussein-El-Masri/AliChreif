@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media App Poll</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        .button {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        .results {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+    <!-- Add Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+    <h1>What is your social media app?</h1>
+    <button class="button" id="facebook-btn">Facebook</button>
+    <button class="button" id="instagram-btn">Instagram</button>
+    <div class="results">
+        <p>Facebook: <span id="facebook-percent">0%</span></p>
+        <p>Instagram: <span id="instagram-percent">0%</span></p>
+    </div>
+    <script>
+        // Your web app's Firebase configuration
+        var firebaseConfig = {
+            apiKey: "AIzaSyDnJFKAGsH_qZQkSIGC8FcsVBC2SduYm9E",
+            authDomain: "qrcode-a3e50.firebaseapp.com",
+                        databaseURL: "https://qrcode-a3e50.firebaseio.com",
+                        projectId: "qrcode-a3e50",
+                        storageBucket: "qrcode-a3e50.appspot.com",
+                        messagingSenderId: "326718322110",
+                        appId: "1:326718322110:web:0e3f2dc8910b0521d335ef",        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        var database = firebase.database();
+
+        let facebookVotes = 0;
+        let instagramVotes = 0;
+        let totalVotes = 0;
+
+        // Get initial votes from Firebase
+        database.ref('votes').once('value', (snapshot) => {
+            if (snapshot.exists()) {
+                const votes = snapshot.val();
+                facebookVotes = votes.facebook || 0;
+                instagramVotes = votes.instagram || 0;
+                totalVotes = facebookVotes + instagramVotes;
+                updateResults();
+            }
+        });
+
+        document.getElementById('facebook-btn').addEventListener('click', () => {
+            facebookVotes++;
+            totalVotes++;
+            updateResults();
+            saveVotes();
+        });
+
+        document.getElementById('instagram-btn').addEventListener('click', () => {
+            instagramVotes++;
+            totalVotes++;
+            updateResults();
+            saveVotes();
+        });
+
+        function updateResults() {
+            let facebookPercent = totalVotes === 0 ? 0 : Math.round((facebookVotes / totalVotes) * 100);
+            let instagramPercent = totalVotes === 0 ? 0 : Math.round((instagramVotes / totalVotes) * 100);
+
+            document.getElementById('facebook-percent').textContent = facebookPercent + '%';
+            document.getElementById('instagram-percent').textContent = instagramPercent + '%';
+        }
+
+        function saveVotes() {
+            database.ref('votes').set({
+                facebook: facebookVotes,
+                instagram: instagramVotes
+            });
+        }
+
+        // Listen for changes in the database
+        database.ref('votes').on('value', (snapshot) => {
+            if (snapshot.exists()) {
+                const votes = snapshot.val();
+                facebookVotes = votes.facebook || 0;
+                instagramVotes = votes.instagram || 0;
+                totalVotes = facebookVotes + instagramVotes;
+                updateResults();
+            }
+        });
+    </script>
+</body>
+</html>
