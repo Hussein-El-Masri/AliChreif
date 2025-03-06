@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -79,10 +80,13 @@
         .selected {
             background-color: #e6f2ff;
         }
+        #status {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+        }
     </style>
-    <!-- Add Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
     <div class="poll-container">
@@ -137,12 +141,19 @@
         </div>
         
         <div class="total-votes">Total votes: <span id="total-count">0</span></div>
+        <div id="status">Connecting to database...</div>
     </div>
+
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <!-- Firebase Database -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
         // Your web app's Firebase configuration
-   
-        const firebaseConfig = {
+       
+
+        var firebaseConfig = {
   apiKey: "AIzaSyAakhmbVzdli4qNNBkpRM1zvXFIuuPF6bg",
   authDomain: "dental-polishing-poll.firebaseapp.com",
   projectId: "dental-polishing-poll",
@@ -151,10 +162,11 @@
   appId: "1:133360391542:web:443e91ed8343f0c2cf9657",
   measurementId: "G-FPE1H6RNSY"
 };
-
+        
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         var database = firebase.database();
+        var statusElement = document.getElementById("status");
         
         // Store votes
         let votes = {
@@ -165,33 +177,57 @@
         };
         
         let hasVoted = false;
+        let dbRef = database.ref('dentalPolishingVotes'); // Changed reference name
         
-        // Get initial votes from Firebase
-        database.ref('polishingVotes').once('value', (snapshot) => {
-            if (snapshot.exists()) {
-                votes = snapshot.val();
-                updateAllResults();
+        // Check database connection
+        var connectedRef = database.ref(".info/connected");
+        connectedRef.on("value", function(snap) {
+            if (snap.val() === true) {
+                statusElement.textContent = "Connected to database";
+                setTimeout(() => {
+                    statusElement.style.display = "none";
+                }, 2000);
+            } else {
+                statusElement.textContent = "Disconnected from database";
+                statusElement.style.display = "block";
             }
         });
+        
+        // Get initial votes from Firebase
+        dbRef.once('value')
+            .then((snapshot) => {
+                if (snapshot.exists()) {
+                    votes = snapshot.val();
+                } else {
+                    // If no data exists, initialize with zeros
+                    dbRef.set(votes);
+                }
+                updateAllResults();
+            })
+            .catch(error => {
+                console.error("Error fetching data:", error);
+                statusElement.textContent = "Error connecting to database";
+            });
         
         function vote(option) {
             if (!hasVoted) {
                 // Increment vote for selected option
-                votes[option]++;
-                
-                // Show all results
-                showAllResults();
-                
-                // Mark user's selection
-                document.querySelector(`#${option} .option-button`).classList.add('selected');
+                let updatedVotes = {...votes};
+                updatedVotes[option] = (updatedVotes[option] || 0) + 1;
                 
                 // Save to Firebase
-                database.ref('polishingVotes').set(votes);
-                
-                hasVoted = true;
-                
-                // Debug - log to console
-                console.log(`Vote recorded for ${option}:`, votes);
+                dbRef.set(updatedVotes)
+                    .then(() => {
+                        console.log("Vote successfully recorded!");
+                        // Mark user's selection
+                        document.querySelector(`#${option} .option-button`).classList.add('selected');
+                        hasVoted = true;
+                    })
+                    .catch(error => {
+                        console.error("Error saving vote:", error);
+                        statusElement.textContent = "Error saving vote";
+                        statusElement.style.display = "block";
+                    });
             }
         }
         
@@ -200,8 +236,6 @@
             document.querySelectorAll('.option-results').forEach(el => {
                 el.style.display = 'block';
             });
-            
-            updateAllResults();
         }
         
         function updateAllResults() {
@@ -211,7 +245,7 @@
             // Update each option's results
             for (let i = 1; i <= 4; i++) {
                 const optionId = `option${i}`;
-                const count = votes[optionId];
+                const count = votes[optionId] || 0;
                 const percent = totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100);
                 
                 const optionEl = document.getElementById(optionId);
@@ -226,11 +260,16 @@
         }
         
         // Listen for changes in the database
-        database.ref('polishingVotes').on('value', (snapshot) => {
+        dbRef.on('value', (snapshot) => {
             if (snapshot.exists()) {
                 votes = snapshot.val();
                 updateAllResults();
+                console.log("Data updated from Firebase:", votes);
             }
+        }, (error) => {
+            console.error("Database error:", error);
+            statusElement.textContent = "Error receiving updates";
+            statusElement.style.display = "block";
         });
     </script>
 </body>
