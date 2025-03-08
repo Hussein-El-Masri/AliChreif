@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dental Polishing Protocol Poll</title>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -95,7 +96,6 @@
     max-width: 600px;
     margin: 30px auto;
     padding: 20px;
-    background-image: url('3d-image.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -110,9 +110,8 @@
 }
 
 .poll-container h1 {
- background-color:rgba(248, 244, 244, 0.9); /* Semi-transparent white */
  
- color: #0066cc;
+ color: white;
 }
 
 /* Media query for mobile devices */
@@ -126,9 +125,28 @@
         border-radius: 0;
     }
 }
+
+
+body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 20px;
+    background-color: #000; /* Fallback color */
+}
+
+#particles-js {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* Ensure it stays in the background */
+}
     </style>
 </head>
 <body>
+    <div id="particles-js"></div>
     <div class="poll-container">
         <h1>Which protocol of polishing did you choose for 3D Printed restorations?</h1>
         
@@ -310,6 +328,23 @@
             console.error("Database error:", error);
             statusElement.textContent = "Error receiving updates";
             statusElement.style.display = "block";
+        });
+    </script>
+    <script>
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 80 },
+                color: { value: '#0066cc' },
+                shape: { type: 'circle' },
+                opacity: { value: 0.5 },
+                size: { value: 3 },
+                line_linked: {
+                    enable: true,
+                    color: '#0066cc',
+                    opacity: 0.4
+                },
+                move: { enable: true, speed: 6 }
+            }
         });
     </script>
 </body>
